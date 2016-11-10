@@ -2,7 +2,7 @@ function Shader(gl, vertexSource, fragmentSource) {
 
   this.program = gl.createProgram();
   gl.attachShader(this.program, compileSource(gl.VERTEX_SHADER, vertexSource));
-  gl.attachShader(this.program, compileSource(gl.FRAGMENT_SHADER, vertexSource));
+  gl.attachShader(this.program, compileSource(gl.FRAGMENT_SHADER, fragmentSource));
   gl.linkProgram(this.program);
 
   if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
@@ -22,6 +22,7 @@ function Shader(gl, vertexSource, fragmentSource) {
 
     return shader;
   }
+
 }
 
 export default Shader;

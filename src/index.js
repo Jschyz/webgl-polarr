@@ -1,4 +1,4 @@
-import Shader from './Shader'
+import Shader from './shader'
 
 var GL = {
   create: function(canvas) {
