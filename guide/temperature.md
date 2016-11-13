@@ -10,16 +10,15 @@ order: 2
 
 
 {% raw %}
-<canvas></canvas>
+<canvas width="400" height="400"></canvas>
 <script id="vertex" type="x/shader">
-attribute vec4 agl_TexCoord;
-attribute vec4 agl_Vertex;
-uniform mat4 agl_ModelViewProjectionMatrix;
+attribute vec4 a_Vertex;
+attribute vec4 a_TexCoord;
 varying vec4 coord;
 
 void main() {
-    coord = agl_TexCoord;
-    gl_Position = agl_ModelViewProjectionMatrix * agl_Vertex;
+  coord = a_TexCoord;
+  gl_Position = a_Vertex;
 }
 </script>
 <script id="fragment" type="x/shader">
@@ -38,50 +37,50 @@ vec3 CCT20K = vec3(0.995451, 1.0, 1.886109);
 
 // Color Conversions
 mat3 matRGBtoXYZ = mat3(
-    0.4124564390896922, 0.21267285140562253, 0.0193338955823293,
-    0.357576077643909, 0.715152155287818, 0.11919202588130297,
-    0.18043748326639894, 0.07217499330655958, 0.9503040785363679
+  0.4124564390896922, 0.21267285140562253, 0.0193338955823293,
+  0.357576077643909, 0.715152155287818, 0.11919202588130297,
+  0.18043748326639894, 0.07217499330655958, 0.9503040785363679
 );
 mat3 matXYZtoRGB = mat3(
-    3.2404541621141045, -0.9692660305051868, 0.055643430959114726,
-    -1.5371385127977166, 1.8760108454466942, -0.2040259135167538,
-    -0.498531409556016, 0.041556017530349834, 1.0572251882231791
+  3.2404541621141045, -0.9692660305051868, 0.055643430959114726,
+  -1.5371385127977166, 1.8760108454466942, -0.2040259135167538,
+  -0.498531409556016, 0.041556017530349834, 1.0572251882231791
 );
 mat3 matAdapt = mat3(
-    0.8951, -0.7502, 0.0389,
-    0.2664, 1.7135, -0.0685,
-    -0.1614, 0.0367, 1.0296
+  0.8951, -0.7502, 0.0389,
+  0.2664, 1.7135, -0.0685,
+  -0.1614, 0.0367, 1.0296
 );
 mat3 matAdaptInv = mat3(
-    0.9869929054667123, 0.43230526972339456, -0.008528664575177328,
-    -0.14705425642099013, 0.5183602715367776, 0.04004282165408487,
-    0.15996265166373125, 0.0492912282128556, 0.9684866957875502
+  0.9869929054667123, 0.43230526972339456, -0.008528664575177328,
+  -0.14705425642099013, 0.5183602715367776, 0.04004282165408487,
+  0.15996265166373125, 0.0492912282128556, 0.9684866957875502
 );
 
 vec3 RGBtoXYZ(vec3 rgb){
-    vec3 xyz, XYZ;
+  vec3 xyz, XYZ;
 
-    xyz = matRGBtoXYZ * rgb;
+  xyz = matRGBtoXYZ * rgb;
 
-    // adaption
-    XYZ = matAdapt * xyz;
-    XYZ *= adaptTo / adaptFrom;
-    xyz = matAdaptInv * XYZ;
+  // adaption
+  XYZ = matAdapt * xyz;
+  XYZ *= adaptTo / adaptFrom;
+  xyz = matAdaptInv * XYZ;
 
-    return xyz;
+  return xyz;
 }
 
 vec3 XYZtoRGB(vec3 xyz){
-    vec3 rgb, RGB;
+  vec3 rgb, RGB;
 
-    // adaption
-    RGB = matAdapt * xyz;
-    rgb *= adaptFrom/adaptTo;
-    xyz = matAdaptInv * RGB;
+  // adaption
+  RGB = matAdapt * xyz;
+  rgb *= adaptFrom/adaptTo;
+  xyz = matAdaptInv * RGB;
 
-    rgb = matXYZtoRGB * xyz;
+  rgb = matXYZtoRGB * xyz;
 
-    return rgb;
+  return rgb;
 }
 
 /*=== Luminance and Saturation Functions ===============================*/
@@ -125,7 +124,7 @@ void main() {
   vec4 colorMap = texture2D(texture, coord.xy);
   vec3 result = colorMap.rgb;
 
-  result = Temperature(result, color[0], color[1]);
+  result = Temperature(result, 1.0, 0.0);
   result = mix(colorMap.rgb, result, colorMap.a);
 
   gl_FragColor = vec4(result, colorMap.a);
@@ -133,7 +132,49 @@ void main() {
 </script>
 <script>
 var $ = function(selector) { return document.querySelector(selector) }
-var gl = GL.create($('canvas'));
-var shader = new GL.Shader(gl, $('#vertex').text, $('#fragment').text)
+var gl = GL.create($('canvas'))
+GL.useProgram(gl, $('#vertex').text, $('#fragment').text)
+var gl_vars = GL.getVars(gl, {attributes: ['a_Vertex', 'a_TexCoord'], uniforms: ['texture', 'color']})
+var mesh = GL.getMesh()
+var arrVtx = mesh.arrVtx
+
+var size = arrVtx.BYTES_PER_ELEMENT;
+var vBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+// 向缓冲区对象中写入数据
+gl.bufferData(gl.ARRAY_BUFFER, arrVtx, gl.STATIC_DRAW);
+// 将缓冲区对象分配给a_Position
+gl.vertexAttribPointer(gl_vars['a_Vertex'], 2, gl.FLOAT, false, size * 4, 0);
+// 链接a_Position变量与分配给它的缓冲区对象
+gl.enableVertexAttribArray(gl_vars['a_Vertex']);
+gl.vertexAttribPointer(gl_vars['a_TexCoord'], 2, gl.FLOAT, false, size * 4, size * 2);
+gl.enableVertexAttribArray(gl_vars['a_TexCoord']);
+
+
+// GL.setBuffer(gl, gl_vars['a_Vertex'], new Float32Array(mesh.vertices), 3)
+// GL.setBuffer(gl, gl_vars['a_TexCoord'], new Float32Array(mesh.coords), 2)
+// gl.uniform2f(gl_vars['color'], -0.4859375, 0.0)
+//
+// end_color: {
+//     r: 200,
+//     g: 185,
+//     b: 0
+// },
+// start_color: {
+//     r: 45,
+//     g: 100,
+//     b: 255
+// },
+
+var img = new Image()
+img.onload = function() {
+  GL.loadTexture(gl, gl.TEXTURE0, img)
+  gl.uniform1i(gl_vars['texture'], 0);
+
+  gl.clearColor(1.0, 1.0, 1.0, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+img.src = '/images/miao256x128.png'
 </script>
 {% endraw %}

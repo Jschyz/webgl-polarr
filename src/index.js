@@ -1,4 +1,8 @@
-import Shader from './shader'
+import useProgram from './shader'
+import getVars from './location'
+import getMesh from './mesh'
+import setBuffer from './buffer'
+import loadTexture from './texture'
 
 var GL = {
   create: function(canvas) {
@@ -10,7 +14,11 @@ var GL = {
     return gl;
   },
 
-  Shader: Shader
+  useProgram,
+  getVars,
+  getMesh,
+  setBuffer,
+  loadTexture
 }
 
 export default GL;
