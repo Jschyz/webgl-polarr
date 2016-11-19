@@ -123,7 +123,7 @@ void main() {
   vec4 colorMap = texture2D(texture, coord.xy);
   vec3 result = colorMap.rgb;
 
-  result = Temperature(result, 1.0, 0.0);
+  result = Temperature(result, 0.0, -1.0);
   result = mix(colorMap.rgb, result, colorMap.a);
 
   gl_FragColor = vec4(result, colorMap.a);
